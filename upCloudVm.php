@@ -109,6 +109,11 @@ function upCloudVm_ConfigOptions(array $params)
             $pomPlans[$plan->name] = $plan->name.' [ '.$plan->storage_tier.' ]';
         }
 
+        //added by beny
+//        $planstorage = $manager->getPlans()['data']->plans->plan;
+//        foreach ($plans as $pian) {
+//            $pomStorage[$pian->memory_amount] = $pian->storage_size;
+
         $zones = $manager->getZones()['data']->zones->zone;
         foreach ($zones as $zone) {
             $pomZones[$zone->id] = $zone->description;
@@ -152,6 +157,14 @@ function upCloudVm_ConfigOptions(array $params)
         foreach ($pomTemplates as $templateId => $desc) {
             $output .= '<option value="'.$templateId.'" '.(($templateId == $product->moduleConfigOption3) ? 'selected' : '').'>'.$desc.'</option>';
         }
+        //berikut ini adalah kode yang di tambahkan oleh beny
+        //percobaan 1
+//       $output .='</td></tr><tr><td class="fieldlabel" width="20%">Ukuran Hardisk</td><td class="fieldarea">
+//       <select name="packageconfigoption[4]" class="form-control select-inline">';
+//         foreach ($pomStorage as $pianId => $desc) {
+//            $output .= '<option value"'.$pianId.'" '.(($pianId == $product->moduleConfigOption4) ? 'selected' : '').'>'.$desc.' GB</option>';
+//        }}
+
 
         $output .= '</select></td></tr>';
 
@@ -166,6 +179,7 @@ function upCloudVm_ConfigOptions(array $params)
         'Default Location' => ['Type' => 'dropdown', 'Options' => $pomZones],
         'Plan' => ['Type' => 'dropdown', 'Options' => $pomPlans],
         'Template' => ['Type' => 'dropdown', 'Options' => $pomTemplates],
+//        'Hardisk' => ['Type' => 'dropdown', 'Options' => $planstorage],
         ];
     } catch (Exception $e) {
         if (App::getFromRequest('action') != 'save') {
@@ -206,9 +220,9 @@ function upCloudVm_TestConnection(array $params)
 function upCloudVm_CreateAccount(array $params)
 {
     if ($params['status'] != 'Pending' && $params['status'] != 'Terminated') {
-        return 'Cannot create service.';
+        return 'Cannot create service. Make sure status is Pending';
     }
-
+        logModuleCall("upCloudVm", "create", json_encode($params), "Response", "Hi this Log from CreateAccount", []);
     try {
         $manager = new Manager($params);
         $response = $manager->createServer();
