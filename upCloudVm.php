@@ -226,7 +226,7 @@ function upCloudVm_CreateAccount(array $params)
     try {
         $manager = new Manager($params);
         $response = $manager->createServer();
-
+    
         $postData = [
             'password2' => $response['data']->server->password,
         ];
@@ -246,8 +246,10 @@ function upCloudVm_CreateAccount(array $params)
                 'password' => $crypted['password'],
             ]
         );
+        logModuleCall("upCloudVm", "create", json_encode($params), "Responnya", "This Logs are located in Manager.php in function CreateAccount", []);
     } catch (\Exception $e) {
         return $e->getMessage();
+        logModuleCall("upCloudVm", "create", json_encode($params), "Responnya", "This Logs are located in Manager.php in function CreateAccount", []);
     }
 
     return 'success';
@@ -394,7 +396,7 @@ function upCloudVm_AdminServicesTabFields(array $params)
         <tbody>
         <tr> <th>Hostname</th> <td>".$details->server->hostname.'</td> </tr>
         <tr> <th>Uuid</th> <td>'.$details->server->uuid.'</td> </tr>
-        <tr> <th>Template</th> <td>'.$templ['data']->storage->title.'</td> </tr>
+        <tr> <th>OS</th> <td>'.$templ['data']->storage->title.'</td> </tr>
         <tr> <th>Plan</th> <td>'.$details->server->plan.'</td> </tr>   
         <tr> <th>Status</th> <td>'.$details->server->state.'</td> </tr>
         <tr> <th>Location</th> <td>'.$details->server->zone.'</td> </tr>

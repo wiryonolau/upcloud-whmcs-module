@@ -276,6 +276,7 @@ class Helper
                             }
                         }
 
+
                         $vnc = $details->remote_access_enabled;
                         if ($vnc == 'yes') {
                             $vnc = 'on';

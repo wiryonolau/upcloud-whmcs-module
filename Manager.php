@@ -151,7 +151,6 @@ class Manager
 //      $size = ($this->params['configoptions']['Storage'] == '') ? 10 : $this->params['configoptions']['Storage'];
         $os = ($this->params['configoptions']['os'] == '') ? $this->params['configoption3'] : $this->params['configoptions']['os']; //edit by beny to select os available on upcloud
         $planz = ($this->params['configoptions']['paket'] =='') ? $this->params['configoption2'] : $this->params['configoptions']['paket']; //edit by beny to change CPU and RAM size
-//        $planz = ($this->params['configoptions']['paket'] =='') ? $this->params['configoption2'] : $this->params['configoptions']['paket']; //edit by beny to change CPU and RAM size
         
         $hddAvaliable = ['fi-hel', 'sg-sin', 'uk-lon'];
         $tier = 'maxiops';
@@ -207,7 +206,13 @@ class Manager
             $body['server']['user_data'] = $this->params['customfields']['initialization'];
         }
         logModuleCall("upCloudVm", "create", json_encode($body), "Responnya", "Hi this is log from bottom, Thanks", []); //uncomment to disable log, by beny
-        return $this->callApi('post', '/server', $body); //uncomment to activated create vps on server, by beny
+        $ngirim='sendemail';
+        $postData = array(
+                    'messagename'=> "Hosting Account Welcome Email",
+                    'id' => $this->params['serviceid'],
+                    );
+        $result = localAPI($ngirim,$postData);
+//       return $this->callApi('post', '/server', $body); //uncomment to activated create vps on server, by beny
     }
 
     /**
@@ -408,7 +413,8 @@ class Manager
      */
     public function getTemplate()
     {
-        return $this->callApi('get', '/storage/'.$this->params['configoption3']);
+        //return $this->callApi('get', '/storage/'.$this->params['configoption3']);
+        return $this->callApi('get', '/storage/'.$this->params['configoptions']['os']);
     }
 
     /**
