@@ -81,6 +81,27 @@ function upCloudVm_ConfigOptions(array $params)
         });
     }
 
+
+    if(Capsule::schema()->hasTable('tblemailtemplates')) {
+        Capsule::table('tblemailtemplates')->updateOrInsert(
+       // Capsule::schema('tblemailtemplates')->updateOrInsert(
+            ['id' => 86],
+             ['type' => 'product',
+             'name' => 'UpcloudVM New Account',
+             'subject' => 'Information About Your Account',
+             'message' => '<p>Dear {$client_name},<br /><br /><strong>PLEASE PRINT THIS MESSAGE FOR YOUR RECORDS - PLEASE READ THIS EMAIL IN FULL.</strong></p><p>We are pleased to tell you that the server you ordered has now been set up and is operational.</p><p><strong>Server Details<br /></strong>=============================</p><p>{$service_product_name}</p><p>Main IP: {$service_server_ip}<br /><p>administrators Username: Use <strong>Administrator for Windows and Use "root" for Linux</strong></p><p>Root pass: {$service_password}</p><p>You will have to login to your registrar and find the area where you can specify both of your custom name server addresses.</p><p>After adding these custom nameservers to your domain registrar control panel, it will take 24 to 48 hours for your domain to delegate authority to your DNS server. Once this has taken effect, your DNS server has control over the DNS records for the domains which use your custom name server addresses.</p><p><strong>SSH Access Information<br /></strong>=============================<br />Main IP Address: xxxxxxxx<br />Server Name: {$service_domain}<br />Root Password: xxxxxxxx</p><p>You can access your server using a free simple SSH client program called Putty located at:<br /><a href="http://www.securitytools.net/mirrors/putty/">http://www.securitytools.net/mirrors/putty/</a></p><p><strong>Support</strong><br />=============================<br />For any support needs, please open a ticket at <a href="{$whmcs_url}">{$whmcs_url}</a></p><p>Please include any necessary information to provide you with faster service, such as root password, domain names, and a description of the problem / or assistance needed. This will speed up the support time by allowing our administrators to immediately begin diagnosing the problem.</p><p>The manual for cPanel can be found here: <a href="http://www.cpanel.net/docs/cp/">http://www.cpanel.net/docs/cp/</a> <br />For documentation on using WHM please see the following link: <a href="http://www.cpanel.net/docs/whm/index.html">http://www.cpanel.net/docs/whm/index.html</a></p><p>=============================</p><p>{$signature}</p>',
+             'custom' => '1',]);
+        Capsule::table('tblemailtemplates')->updateOrInsert(
+             ['id' => 87],
+             ['type' => 'product',
+             'name' => 'UpCloud VM Reinstallation',
+             'subject' => 'VPS Reinstalled',
+             'message' => 'Hi your VPS has been reinstlled with another os',
+             'custom' => '1',
+            ]
+    );
+    }
+
     $product = WHMCS\Product\Product::find(App::getFromRequest('id'));
 
     $server = Capsule::table('tblservers')
@@ -97,7 +118,7 @@ function upCloudVm_ConfigOptions(array $params)
 
     try {
         $manager = new Manager($params);
-        $pomPlans = $pomZones = $pomTemplates = [];
+        $pomEmail = $pomPlans = $pomZones = $pomTemplates = [];
         $templates = $manager->getTemplates()['data']->storages->storage;
 
         foreach ($templates as $template) {
@@ -109,10 +130,13 @@ function upCloudVm_ConfigOptions(array $params)
             $pomPlans[$plan->name] = $plan->name.' [ '.$plan->storage_tier.' ]';
         }
 
-        //added by beny
-//        $planstorage = $manager->getPlans()['data']->plans->plan;
-//        foreach ($plans as $pian) {
-//            $pomStorage[$pian->memory_amount] = $pian->storage_size;
+        $dataemail = array(
+                'type' => 'product',
+        );
+        $emailtemplates = localAPI('getemailtemplates', $dataemail);
+        foreach ($emailtemplates["emailtemplates"]["emailtemplate"] as $nn) {
+            $pomEmail[$nn->id] = $nn->name;
+        }
 
         $zones = $manager->getZones()['data']->zones->zone;
         foreach ($zones as $zone) {
@@ -157,29 +181,27 @@ function upCloudVm_ConfigOptions(array $params)
         foreach ($pomTemplates as $templateId => $desc) {
             $output .= '<option value="'.$templateId.'" '.(($templateId == $product->moduleConfigOption3) ? 'selected' : '').'>'.$desc.'</option>';
         }
-        //berikut ini adalah kode yang di tambahkan oleh beny
-        //percobaan 1
-//       $output .='</td></tr><tr><td class="fieldlabel" width="20%">Ukuran Hardisk</td><td class="fieldarea">
-//       <select name="packageconfigoption[4]" class="form-control select-inline">';
-//         foreach ($pomStorage as $pianId => $desc) {
-//            $output .= '<option value"'.$pianId.'" '.(($pianId == $product->moduleConfigOption4) ? 'selected' : '').'>'.$desc.' GB</option>';
-//        }}
 
-
+        $output .='</td></tr><tr><td class="fieldlabel" width="20%">Creation Email Template</td><td class="fieldarea">
+                <select name="packageconfigoption[4]" class="form-control select-inline">';
+            foreach ($emailtemplates["emailtemplates"]["emailtemplate"] as $gg) {
+            $output .= '<option value="'.$gg["name"].'" '.(($gg["name"] == $product->moduleConfigOption4) ? 'selected' : '').'>'.$gg["name"].'</option>';
+        }  
+       
         $output .= '</select></td></tr>';
-
+        
         if (App::getFromRequest('action') != 'save') {
             ob_clean();
             $data['content'] = $output;
             echo json_encode($data);
-            die;
+           die;
         }
 
         return [
         'Default Location' => ['Type' => 'dropdown', 'Options' => $pomZones],
         'Plan' => ['Type' => 'dropdown', 'Options' => $pomPlans],
         'Template' => ['Type' => 'dropdown', 'Options' => $pomTemplates],
-//        'Hardisk' => ['Type' => 'dropdown', 'Options' => $planstorage],
+        'Creation Email Template' => ['Type' => 'dropdown', 'Options' => $pomEmail],
         ];
     } catch (Exception $e) {
         if (App::getFromRequest('action') != 'save') {
@@ -222,7 +244,6 @@ function upCloudVm_CreateAccount(array $params)
     if ($params['status'] != 'Pending' && $params['status'] != 'Terminated') {
         return 'Cannot create service. Make sure status is Pending';
     }
-        logModuleCall("upCloudVm", "create", json_encode($params), "Response", "Hi this Log from CreateAccount", []);
     try {
         $manager = new Manager($params);
         $response = $manager->createServer();
@@ -242,14 +263,14 @@ function upCloudVm_CreateAccount(array $params)
         Capsule::table('tblhosting')->updateOrInsert(
             ['id' => $params['serviceid']],
             [
-                'username' => 'root',
+                'username' => $response['data']->server->username, 
+//'root',
                 'password' => $crypted['password'],
             ]
         );
-        logModuleCall("upCloudVm", "create", json_encode($params), "Responnya", "This Logs are located in Manager.php in function CreateAccount", []);
+        logModuleCall("upCloudVm", "create", json_encode($params), "Response", "Hi this Log from CreateAccount", []);
     } catch (\Exception $e) {
         return $e->getMessage();
-        logModuleCall("upCloudVm", "create", json_encode($params), "Responnya", "This Logs are located in Manager.php in function CreateAccount", []);
     }
 
     return 'success';

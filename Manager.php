@@ -148,21 +148,22 @@ class Manager
     public function createServer()
     {
         $zone = ($this->params['configoptions']['Location'] == '') ? $this->params['configoption1'] : $this->params['configoptions']['Location'];
-//      $size = ($this->params['configoptions']['Storage'] == '') ? 10 : $this->params['configoptions']['Storage'];
-        $os = ($this->params['configoptions']['os'] == '') ? $this->params['configoption3'] : $this->params['configoptions']['os']; //edit by beny to select os available on upcloud
-        $planz = ($this->params['configoptions']['paket'] =='') ? $this->params['configoption2'] : $this->params['configoptions']['paket']; //edit by beny to change CPU and RAM size
+        $os = ($this->params['configoptions']['os'] == '') ? $this->params['configoption3'] : $this->params['configoptions']['os'];
+        $planz = ($this->params['configoptions']['paket'] =='') ? $this->params['configoption2'] : $this->params['configoptions']['paket'];
         
         $hddAvaliable = ['fi-hel', 'sg-sin', 'uk-lon'];
         $tier = 'maxiops';
-        $size1 = $planz; //mendeklarasikan configoption planz agar di pecah pada explode
-        $size = explode('-' , $size1); //fungsi untuk memecah string
+        $getsize = $planz; 
+        $newsize = explode('-' , $getsize);
+        
+        $osAvailable = ['01000000-0000-4000-8000-000010060200', '01000000-0000-4000-8000-000010060300', '01000000-0000-4000-8000-000010060300', '01000000-0000-4000-8000-000010070300'];
+        $username = 'root';
 
-//        foreach ($hddAvaliable as $zon) {
-//            if (strpos($zone, $zon) !== false) {
-//                $tier = 'hdd';
-//                break;
-//            }
-//        }
+        foreach ($osAvailable as $wind) {
+            if (strpos($os, $wind) !== false) {
+                $username = 'administrator';
+                break;
+         }}
 
         if (empty($this->params['domain'])) {
             $this->params['domain'] = '127.0.0.1';
@@ -173,18 +174,15 @@ class Manager
                 'zone' => $zone,
                 'title' => 'VM-'.$this->params['serviceid'],
                 'hostname' => $this->params['domain'],
-                'plan' => $size[0].'-'.$size[1],//memakai simbol - karena untuk create server itu formatnya seperti 1xCPU-1GB
-                //'plan' => $planz,//edited by beny to select plan such like 1CPU 1GB of RAM
-                // 'plan' => $this->params['configoption2'], //original code
+                'plan' => $newsize[0].'-'.$newsize[1],
                 'firewall' => 'off',
                 'remote_access_type' => 'vnc',
                 'storage_devices' => [
                     'storage_device' => [
                         'action' => 'clone',
-                        'storage' => $os, //edited by beny to select os available on upcloud server0
-                       // 'storage' => $this->params['configoption3'], //this is original code
+                        'storage' => $os, 
                         'title' => 'VM-'.$this->params['serviceid'].' Storage',
-                        'size' => $size[2],
+                        'size' => $newsize[2],
                         'tier' => $tier,
                     ],
                 ],
@@ -193,7 +191,7 @@ class Manager
 
         if (!empty($this->params['customfields']['SSHKey'])) {
             $body['server']['login_user'] = [
-                'username' => 'root',
+                'username' => $username,
                 'ssh_keys' => [
                     'ssh_key' => [
                         $this->params['customfields']['SSHKey'],
@@ -205,14 +203,14 @@ class Manager
         if (!empty($this->params['customfields']['initialization'])) {
             $body['server']['user_data'] = $this->params['customfields']['initialization'];
         }
-        logModuleCall("upCloudVm", "create", json_encode($body), "Responnya", "Hi this is log from bottom, Thanks", []); //uncomment to disable log, by beny
-        $ngirim='sendemail';
+
         $postData = array(
-                    'messagename'=> "Hosting Account Welcome Email",
-                    'id' => $this->params['serviceid'],
+                    'id'=> $this->params['serviceid'],
+                    'messagename' => $this->params['configoption4'],
                     );
-        $result = localAPI($ngirim,$postData);
-//       return $this->callApi('post', '/server', $body); //uncomment to activated create vps on server, by beny
+//        $result = localAPI('sendemail',$postData);
+        logModuleCall("upCloudVm", "create", json_encode($body), "Responnya", "Hi this is response from create server in manager.php", []);
+//       return $this->callApi('post', '/server', $body); 
     }
 
     /**
@@ -396,6 +394,8 @@ class Manager
         }
     }
 
+
+
     /**
      * Get avaliable zones.
      *
@@ -413,7 +413,6 @@ class Manager
      */
     public function getTemplate()
     {
-        //return $this->callApi('get', '/storage/'.$this->params['configoption3']);
         return $this->callApi('get', '/storage/'.$this->params['configoptions']['os']);
     }
 
