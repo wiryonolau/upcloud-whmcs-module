@@ -82,25 +82,26 @@ function upCloudVm_ConfigOptions(array $params)
     }
 
 
-    if(Capsule::schema()->hasTable('tblemailtemplates')) {
-        Capsule::table('tblemailtemplates')->updateOrInsert(
-       // Capsule::schema('tblemailtemplates')->updateOrInsert(
-            ['id' => 86],
-             ['type' => 'product',
-             'name' => 'UpcloudVM New Account',
-             'subject' => 'Information About Your Account',
-             'message' => '<p>Dear {$client_name},<br /><br /><strong>PLEASE PRINT THIS MESSAGE FOR YOUR RECORDS - PLEASE READ THIS EMAIL IN FULL.</strong></p><p>We are pleased to tell you that the server you ordered has now been set up and is operational.</p><p><strong>Server Details<br /></strong>=============================</p><p>{$service_product_name}</p><p>Main IP: {$service_server_ip}<br /><p>administrators Username: Use <strong>Administrator for Windows and Use "root" for Linux</strong></p><p>Root pass: {$service_password}</p><p>You will have to login to your registrar and find the area where you can specify both of your custom name server addresses.</p><p>After adding these custom nameservers to your domain registrar control panel, it will take 24 to 48 hours for your domain to delegate authority to your DNS server. Once this has taken effect, your DNS server has control over the DNS records for the domains which use your custom name server addresses.</p><p><strong>SSH Access Information<br /></strong>=============================<br />Main IP Address: xxxxxxxx<br />Server Name: {$service_domain}<br />Root Password: xxxxxxxx</p><p>You can access your server using a free simple SSH client program called Putty located at:<br /><a href="http://www.securitytools.net/mirrors/putty/">http://www.securitytools.net/mirrors/putty/</a></p><p><strong>Support</strong><br />=============================<br />For any support needs, please open a ticket at <a href="{$whmcs_url}">{$whmcs_url}</a></p><p>Please include any necessary information to provide you with faster service, such as root password, domain names, and a description of the problem / or assistance needed. This will speed up the support time by allowing our administrators to immediately begin diagnosing the problem.</p><p>The manual for cPanel can be found here: <a href="http://www.cpanel.net/docs/cp/">http://www.cpanel.net/docs/cp/</a> <br />For documentation on using WHM please see the following link: <a href="http://www.cpanel.net/docs/whm/index.html">http://www.cpanel.net/docs/whm/index.html</a></p><p>=============================</p><p>{$signature}</p>',
-             'custom' => '1',]);
-        Capsule::table('tblemailtemplates')->updateOrInsert(
-             ['id' => 87],
-             ['type' => 'product',
-             'name' => 'UpCloud VM Reinstallation',
-             'subject' => 'VPS Reinstalled',
-             'message' => 'Hi your VPS has been reinstlled with another os',
-             'custom' => '1',
-            ]
-    );
-    }
+    if (!Capsule::table('tblemailtemplates')->where('name', 'UpCloudVM New Account')->first()){
+                 Capsule::table('tblemailtemplates')->updateOrInsert(
+                    ['type' => 'product',
+                     'name' => 'UpcloudVM New Account',
+                     'subject' => 'Information About Your Account',
+                     'message' => '<p>Dear {$client_name},<br /><br /><strong>PLEASE PRINT THIS MESSAGE FOR YOUR RECORDS - PLEASE READ THIS EMAIL IN FULL.</strong></p><p>We are pleased to tell you that the server you ordered has now been set up and is operational.</p><p><strong>Server Details<br /></strong>=============================</p><p>{$service_product_name}</p><p>Main IP: {$service_server_ip}<br /><p>administrators Username: Use <strong>Administrator for Windows and Use "root" for Linux</strong></p><p>Root pass: {$service_password}</p><p>You will have to login to your registrar and find the area where you can specify both of your custom name server addresses.</p><p>After adding these custom nameservers to your domain registrar control panel, it will take 24 to 48 hours for your domain to delegate authority to your DNS server. Once this has taken effect, your DNS server has control over the DNS records for the domains which use your custom name server addresses.</p><p><strong>SSH Access Information<br /></strong>=============================<br />Main IP Address: xxxxxxxx<br />Server Name: {$service_domain}<br />Root Password: xxxxxxxx</p><p>You can access your server using a free simple SSH client program called Putty located at:<br /><a href="http://www.securitytools.net/mirrors/putty/">http://www.securitytools.net/mirrors/putty/</a></p><p><strong>Support</strong><br />=============================<br />For any support needs, please open a ticket at <a href="{$whmcs_url}">{$whmcs_url}</a></p><p>Please include any necessary information to provide you with faster service, such as root password, domain names, and a description of the problem / or assistance needed. This will speed up the support time by allowing our administrators to immediately begin diagnosing the problem.</p><p>The manual for cPanel can be found here: <a href="http://www.cpanel.net/docs/cp/">http://www.cpanel.net/docs/cp/</a> <br />For documentation on using WHM please see the following link: <a href="http://www.cpanel.net/docs/whm/index.html">http://www.cpanel.net/docs/whm/index.html</a></p><p>=============================</p><p>{$signature}</p>',
+                     'custom' => '1']);
+        };
+
+
+    if (!Capsule::table('tblemailtemplates')->where('name', 'UpcloudVM Reinstallation')->first()){
+                 Capsule::table('tblemailtemplates')->updateOrInsert(
+                   ['type' => 'product',
+                    'name' => 'UpcloudVM Reinstallation',
+                    'subject' => 'Information About Reinstallation',
+                    'message' => '<p>Dear {$client_name}</p><p>As you requested, your VM has been reinstalled </p><p>Vps Machine Name: {$service_name}<br />User Name: {$username}<br />Password: {$password}</p><p>{$signature}</p>',
+                    'custom' => '1']);
+        } 
+
+
 
     $product = WHMCS\Product\Product::find(App::getFromRequest('id'));
 

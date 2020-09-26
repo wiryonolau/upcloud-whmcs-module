@@ -156,14 +156,20 @@ class Manager
         $getsize = $planz; 
         $newsize = explode('-' , $getsize);
         
-        $osAvailable = ['01000000-0000-4000-8000-000010060200', '01000000-0000-4000-8000-000010060300', '01000000-0000-4000-8000-000010060300', '01000000-0000-4000-8000-000010070300'];
+        $windowsTemplate = ['01000000-0000-4000-8000-000010060200', '01000000-0000-4000-8000-000010060300', '01000000-0000-4000-8000-000010060300', '01000000-0000-4000-8000-000010070300'];
         $username = 'root';
 
-        foreach ($osAvailable as $wind) {
+        if (in_array($os, $windowsTemplate))
+            {
+               $username = 'administrator';
+            }
+
+/*        foreach ($osAvailable as $wind) {
             if (strpos($os, $wind) !== false) {
                 $username = 'administrator';
                 break;
          }}
+*/
 
         if (empty($this->params['domain'])) {
             $this->params['domain'] = '127.0.0.1';
