@@ -192,6 +192,9 @@ class Manager
                         'tier' => $tier,
                     ],
                 ],
+                'login_user' => [
+                    'username' => $username,
+                ],
             ],
         ];
 
@@ -210,13 +213,7 @@ class Manager
             $body['server']['user_data'] = $this->params['customfields']['initialization'];
         }
 
-        $postData = array(
-                    'id'=> $this->params['serviceid'],
-                    'messagename' => $this->params['configoption4'],
-                    );
-//        $result = localAPI('sendemail',$postData);
-        logModuleCall("upCloudVm", "create", json_encode($body), "Responnya", "Hi this is response from create server in manager.php", []);
-//       return $this->callApi('post', '/server', $body); 
+        return $this->callApi('post', '/server', $body); 
     }
 
     /**
@@ -918,6 +915,27 @@ class Manager
         if (!$allow) {
             throw new \Exception('Backup does not belong to your server');
         }
+    }
+
+    /**
+     * List exiting tags
+     *
+     */
+    public function getTags()
+    {
+        return $this->callApi('get', '/tag');
+    }
+   
+    public function assignTags()
+    {
+        $this->checkServer();
+        $body = ['server' => [
+                        'tag' => $this->params['configoption5'],
+                    ]
+        ];
+
+        return $this->callApi('post', '/server/'.$this->server.'/tag/', $body);
+
     }
 
     /**

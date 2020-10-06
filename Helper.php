@@ -87,8 +87,8 @@ class Helper
         if ($field == 'custom') {
             Capsule::table('tblcustomfields')
                 ->updateOrInsert(['type' => 'product', 'relid' => $product->id, 'fieldname' => 'SSHKey|SSH Key'], ['showorder' => 'on', 'fieldtype' => 'textarea']);
-            Capsule::table('tblcustomfields')
-                ->updateOrInsert(['type' => 'product', 'relid' => $product->id, 'fieldname' => 'initialization|Initialization Script'], ['showorder' => 'on', 'fieldtype' => 'textarea']);
+//            Capsule::table('tblcustomfields')
+//                ->updateOrInsert(['type' => 'product', 'relid' => $product->id, 'fieldname' => 'initialization|Initialization Script'], ['showorder' => 'on', 'fieldtype' => 'textarea']);
 
             header('Location: configproducts.php?action=edit&id='.\App::getFromRequest('id').'&tab=4');
             die;

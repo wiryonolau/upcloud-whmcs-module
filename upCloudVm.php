@@ -30,6 +30,8 @@ if (!defined('WHMCS')) {
     die('This file cannot be accessed directly');
 }
 
+
+
 /**
  * Module Meta Data.
  *
@@ -87,7 +89,7 @@ function upCloudVm_ConfigOptions(array $params)
                     ['type' => 'product',
                      'name' => 'UpcloudVM New Account',
                      'subject' => 'Information About Your Account',
-                     'message' => '<p>Dear {$client_name},<br /><br /><strong>PLEASE PRINT THIS MESSAGE FOR YOUR RECORDS - PLEASE READ THIS EMAIL IN FULL.</strong></p><p>We are pleased to tell you that the server you ordered has now been set up and is operational.</p><p><strong>Server Details<br /></strong>=============================</p><p>{$service_product_name}</p><p>Main IP: {$service_server_ip}<br /><p>administrators Username: Use <strong>Administrator for Windows and Use "root" for Linux</strong></p><p>Root pass: {$service_password}</p><p>You will have to login to your registrar and find the area where you can specify both of your custom name server addresses.</p><p>After adding these custom nameservers to your domain registrar control panel, it will take 24 to 48 hours for your domain to delegate authority to your DNS server. Once this has taken effect, your DNS server has control over the DNS records for the domains which use your custom name server addresses.</p><p><strong>SSH Access Information<br /></strong>=============================<br />Main IP Address: xxxxxxxx<br />Server Name: {$service_domain}<br />Root Password: xxxxxxxx</p><p>You can access your server using a free simple SSH client program called Putty located at:<br /><a href="http://www.securitytools.net/mirrors/putty/">http://www.securitytools.net/mirrors/putty/</a></p><p><strong>Support</strong><br />=============================<br />For any support needs, please open a ticket at <a href="{$whmcs_url}">{$whmcs_url}</a></p><p>Please include any necessary information to provide you with faster service, such as root password, domain names, and a description of the problem / or assistance needed. This will speed up the support time by allowing our administrators to immediately begin diagnosing the problem.</p><p>The manual for cPanel can be found here: <a href="http://www.cpanel.net/docs/cp/">http://www.cpanel.net/docs/cp/</a> <br />For documentation on using WHM please see the following link: <a href="http://www.cpanel.net/docs/whm/index.html">http://www.cpanel.net/docs/whm/index.html</a></p><p>=============================</p><p>{$signature}</p>',
+                     'message' => '<p>Dear {$client_name},<br /><br /><strong>PLEASE PRINT THIS MESSAGE FOR YOUR RECORDS - PLEASE READ THIS EMAIL IN FULL.</strong></p><p>We are pleased to tell you that the server you ordered has now been set up and is operational. And this is information about your VPS</p><p><strong>Server Details<br /></strong>=============================</p><p><strong>IP Server</strong>: {$service_dedicated_ip}</p><p><strong>Username</strong>: {$service_username}<br /><strong>Password</strong>: {$service_password}</p><p>You can access your server using a free simple SSH client program called Putty located at:<br /><a href="http://www.securitytools.net/mirrors/putty/">http://www.securitytools.net/mirrors/putty/</a></p><p>or you can user terminal to login into your Server</p><p><strong>Support</strong><br />=============================<br />For any support needs, please open a ticket at <a href="{$whmcs_url}">{$whmcs_url}</a></p><p>The team support will asked information about your account details in ticket.</p><p>Thank you for using our service</p><p>=============================</p><p>{$signature}</p>',
                      'custom' => '1']);
         };
 
@@ -119,7 +121,7 @@ function upCloudVm_ConfigOptions(array $params)
 
     try {
         $manager = new Manager($params);
-        $pomEmail = $pomPlans = $pomZones = $pomTemplates = [];
+        $pomEmail = $pomPlans = $pomZones = $pomTemplates = $pomTags = [];
         $templates = $manager->getTemplates()['data']->storages->storage;
 
         foreach ($templates as $template) {
@@ -142,6 +144,11 @@ function upCloudVm_ConfigOptions(array $params)
         $zones = $manager->getZones()['data']->zones->zone;
         foreach ($zones as $zone) {
             $pomZones[$zone->id] = $zone->description;
+        }
+
+        $tags = $manager->getTags()['data']->tags->tag;
+        foreach ($tags as $tag) {
+            $pomTags[$tag->name] = $tag->description;
         }
 
         $output = '
@@ -189,6 +196,11 @@ function upCloudVm_ConfigOptions(array $params)
             $output .= '<option value="'.$gg["name"].'" '.(($gg["name"] == $product->moduleConfigOption4) ? 'selected' : '').'>'.$gg["name"].'</option>';
         }  
        
+        $output .='</td></tr><tr><td class="fieldlabel" width="20%">List Tags</td><td class="fieldarea">
+                <select name="packageconfigoption[5]" class="form-control select-inline">';
+            foreach ($pomTags as $tag => $desc) {
+            $output .= '<option value="'.$tag.'" '.(($tag == $product->moduleConfigOption5) ? 'selected' : '').'>'.$desc.'</option>';
+        }  
         $output .= '</select></td></tr>';
         
         if (App::getFromRequest('action') != 'save') {
@@ -203,6 +215,7 @@ function upCloudVm_ConfigOptions(array $params)
         'Plan' => ['Type' => 'dropdown', 'Options' => $pomPlans],
         'Template' => ['Type' => 'dropdown', 'Options' => $pomTemplates],
         'Creation Email Template' => ['Type' => 'dropdown', 'Options' => $pomEmail],
+        'Tag Server' => ['Type' => 'dropdown', 'Options' => $pomTag],
         ];
     } catch (Exception $e) {
         if (App::getFromRequest('action') != 'save') {
@@ -248,10 +261,18 @@ function upCloudVm_CreateAccount(array $params)
     try {
         $manager = new Manager($params);
         $response = $manager->createServer();
-    
         $postData = [
             'password2' => $response['data']->server->password,
         ];
+        $dedicatedip = null;
+        $ipaddresses = $response['data']->server->ip_addresses->ip_address;    
+        foreach($ipaddresses as $ipaddr){
+            if ($ipaddr->access == 'public' && $ipaddr->family == 'IPv4'){
+                $dedicatedip = $ipaddr->address;
+                break;
+            }
+        }
+        
         $crypted = localAPI('EncryptPassword', $postData);
 
         Capsule::table('mod_upCloudVm')->updateOrInsert(
@@ -265,17 +286,25 @@ function upCloudVm_CreateAccount(array $params)
             ['id' => $params['serviceid']],
             [
                 'username' => $response['data']->server->username, 
-//'root',
                 'password' => $crypted['password'],
+                'dedicatedip' => $dedicatedip,
             ]
         );
-        logModuleCall("upCloudVm", "create", json_encode($params), "Response", "Hi this Log from CreateAccount", []);
+        
+        $assignTag = $manager->assignTags();
+        $sendmail = array(                                                                                                                                                                                                                                                     
+                    'id'=> $params['serviceid'],
+                    'messagename' => $params['configoption4'],
+                    );
+        $result = localAPI('sendemail',$sendmail);        
+        logModuleCall("upCloudVm", "create", $assignTag, "Response", "Hi this Log from CreateAccount", []);
     } catch (\Exception $e) {
         return $e->getMessage();
     }
 
     return 'success';
 }
+
 
 /**
  * Stop and Terminate Server.
@@ -367,6 +396,7 @@ function upCloudVm_AdminCustomButtonArray()
         'Shutdown VM' => 'ShutdownVM',
         'Reboot VM' => 'RebootVM',
         'Refresh' => 'Refresh',
+        'Tags VM' => 'Tags',
     ];
 }
 
@@ -404,6 +434,7 @@ function upCloudVm_AdminServicesTabFields(array $params)
         $details = $manager->getServerDetails()['data'];
         $templ = $manager->getTemplate();
         $zones = $manager->getZones();
+        $ipv4 = $details->server->ip_addresses->ip_address;
 
         foreach ($zones['data']->zones->zone as $zone) {
             if ($zone->id == $details->server->zone) {
@@ -411,7 +442,13 @@ function upCloudVm_AdminServicesTabFields(array $params)
                 break;
             }
         }
+        foreach ($ipv4 as $ipa) {
+                                if ($ipa->access == 'public' && $ipa->family == 'IPv4') {
+                                    $details->server->ip_addresses = $ipa->address;
+                                }
+        }
 
+  
         $output = "
         <table class='datatable' 
         style='width:400px; text-align:center;margin-top:20px;border-spacing: 5px;border-collapse: separate;'>
@@ -422,6 +459,7 @@ function upCloudVm_AdminServicesTabFields(array $params)
         <tr> <th>Plan</th> <td>'.$details->server->plan.'</td> </tr>   
         <tr> <th>Status</th> <td>'.$details->server->state.'</td> </tr>
         <tr> <th>Location</th> <td>'.$details->server->zone.'</td> </tr>
+        <tr> <th>IP Public</th> <td>'.$details->server->ip_addresses.'</td> </tr>
         </tbody></table>';
 
         if (!empty($details->server->ip_addresses)) {
@@ -429,7 +467,7 @@ function upCloudVm_AdminServicesTabFields(array $params)
             style='text-align:center;width:400px; margin-top:20px;border-spacing: 5px;
             border-collapse: separate;'><thead><tr><th>IP Address</th><th>Access</th><th>Family</th></tr></thead>
             <tbody>";
-            foreach ($details->server->ip_addresses->ip_address as $ip) {
+            foreach ($ipv4 as $ip) {
                 $output .= "<tr><td>{$ip->address}</td><td>{$ip->access}</td><td>{$ip->family}</td></tr>";
             }
 
@@ -630,5 +668,21 @@ function upCloudVm_ChangePackage(array $params)
  */
 function upCloudVm_Refresh()
 {
+    return 'success';
+}
+
+/**
+ *
+ * This is sparta
+ */
+function upCloudVm_Tags(array $params)
+{
+    try{
+        $manager = new Manager($params);
+        $manager->assignTags();
+    } catch (\Exception $e){
+        return $e->getMessage();
+    }
+
     return 'success';
 }
