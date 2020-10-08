@@ -938,6 +938,15 @@ class Manager
 
     }
 
+    /*
+     * This func is development mode so you can it  with $manager->testDev();
+     * 
+     */
+    public function testDev()
+    {
+
+    }
+
     /**
      * Get account's details.
      */

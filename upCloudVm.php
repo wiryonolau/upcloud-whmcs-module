@@ -290,8 +290,11 @@ function upCloudVm_CreateAccount(array $params)
                 'dedicatedip' => $dedicatedip,
             ]
         );
-        
-        $assignTag = $manager->assignTags();
+        try{        
+            $assignTag = $manager->assignTags();
+         }
+         catch(\Exception $e){
+         }
         $sendmail = array(                                                                                                                                                                                                                                                     
                     'id'=> $params['serviceid'],
                     'messagename' => $params['configoption4'],
